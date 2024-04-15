@@ -3,9 +3,28 @@ defmodule ExplorerTA.Overlap do
   TODO: Documentation
   """
 
+  require Explorer.Series
+
   alias Explorer.Series
 
   ## Public API
+
+  @doc """
+  Double Exponential Moving Average (DEMA)
+
+  The Double Exponential Moving Average attempts to a smoother average with less
+  lag than the normal Exponential Moving Average (EMA).
+
+  Sources:
+
+    - https://www.tradingtechnologies.com/help/x-study/technical-indicator-definitions/double-exponential-moving-average-dema/
+
+  """
+  def dema(src, length) do
+    ema1 = ema(src, length)
+    ema2 = ema(ema1, length)
+    Series.map(ema1, 2 * _ - ^ema2)
+  end
 
   @doc """
   Exponential Moving Average (EMA)
@@ -26,11 +45,10 @@ defmodule ExplorerTA.Overlap do
     alpha = 2 / (length + 1)
 
     sma_nth = src |> Series.slice(0..(length - 1)) |> Series.mean()
-    list = Enum.reverse([sma_nth | List.duplicate(nil, length - 1)])
-    start = Series.from_list(list)
+    start = Enum.reverse([sma_nth | List.duplicate(nil, length - 1)])
 
     Series.concat(
-      start,
+      Series.from_list(start),
       Series.slice(src, length..-1)
     )
     |> Series.ewm_mean(alpha: alpha, adjust: false)
@@ -64,6 +82,7 @@ defmodule ExplorerTA.Overlap do
   Sources:
 
     - https://www.tradingtechnologies.com/help/x-study/technical-indicator-definitions/simple-moving-average-sma/
+
   """
   def sma(src, length) do
     src
